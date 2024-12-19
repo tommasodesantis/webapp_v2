@@ -2,13 +2,13 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import {
-  Box,
   Button,
   Container,
   TextField,
   Typography,
   Paper,
   Link,
+  Box,
 } from '@mui/material';
 
 export default function Login() {
@@ -31,74 +31,111 @@ export default function Login() {
   };
 
   return (
-    <Container component="main" maxWidth="xs">
-      <Box
+    <Container 
+      component="main" 
+      maxWidth="xs" 
+      sx={{
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)'
+      }}
+    >
+      <Paper
+        elevation={3}
         sx={{
-          marginTop: 8,
+          padding: 4,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
+          width: '100%',
+          backgroundColor: 'rgba(255, 255, 255, 0.9)',
         }}
       >
-        <Paper
-          elevation={3}
+        <Box
           sx={{
-            padding: 4,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
             width: '100%',
+            textAlign: 'center',
+            mb: 4
           }}
         >
-          <Typography component="h1" variant="h5">
+          <Typography 
+            component="h1" 
+            variant="h4" 
+            sx={{ 
+              color: 'primary.main',
+              fontWeight: 700,
+              letterSpacing: '0.5px',
+              marginBottom: '8px',
+              fontSize: { xs: '1.75rem', sm: '2.125rem' }
+            }}
+          >
+            Welcome to SuperPro Web App
+          </Typography>
+          <Typography 
+            component="h2" 
+            variant="h5" 
+            sx={{ 
+              color: 'text.secondary',
+              fontWeight: 500,
+              letterSpacing: '0.25px',
+              fontSize: { xs: '1.25rem', sm: '1.5rem' }
+            }}
+          >
             Sign In
           </Typography>
-          {error && (
-            <Typography color="error" sx={{ mt: 2 }}>
-              {error}
-            </Typography>
-          )}
-          <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              id="email"
-              label="Email Address"
-              name="email"
-              autoComplete="email"
-              autoFocus
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              name="password"
-              label="Password"
-              type="password"
-              id="password"
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-            <Button
-              type="submit"
-              fullWidth
-              variant="contained"
-              sx={{ mt: 3, mb: 2 }}
-            >
-              Sign In
-            </Button>
-            <Box sx={{ textAlign: 'center' }}>
-              <Link href="/register" variant="body2">
-                {"Don't have an account? Sign Up"}
-              </Link>
-            </Box>
+        </Box>
+        
+        {error && (
+          <Typography color="error" sx={{ mt: 2 }}>
+            {error}
+          </Typography>
+        )}
+        <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1, width: '100%' }}>
+          <TextField
+            margin="normal"
+            required
+            fullWidth
+            id="email"
+            label="Email Address"
+            name="email"
+            autoComplete="email"
+            autoFocus
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+          <TextField
+            margin="normal"
+            required
+            fullWidth
+            name="password"
+            label="Password"
+            type="password"
+            id="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          <Button
+            type="submit"
+            fullWidth
+            variant="contained"
+            sx={{ 
+              mt: 3, 
+              mb: 2,
+              py: 1.5,
+              fontSize: '1.1rem'
+            }}
+          >
+            Sign In
+          </Button>
+          <Box sx={{ textAlign: 'center' }}>
+            <Link href="/register" variant="body2">
+              {"Don't have an account? Sign Up"}
+            </Link>
           </Box>
-        </Paper>
-      </Box>
+        </Box>
+      </Paper>
     </Container>
   );
 }

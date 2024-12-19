@@ -62,13 +62,9 @@ export default function Dashboard() {
   };
 
   return (
-    <Container maxWidth="lg">
-      <Box sx={{ mt: 4 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          Welcome, {user?.email}
-        </Typography>
-
-        <Paper sx={{ p: 3, mt: 3 }}>
+    <Container maxWidth="lg" sx={{ display: 'flex', justifyContent: 'center', minHeight: '100vh', py: 4 }}>
+      <Box sx={{ width: '100%', maxWidth: 800 }}>
+        <Paper sx={{ p: 3 }}>
           <Box
             sx={{
               display: 'flex',
@@ -77,6 +73,10 @@ export default function Dashboard() {
               gap: 2,
             }}
           >
+            <Typography variant="h5" component="h1" gutterBottom align="center">
+              Excel File Processor
+            </Typography>
+
             <input
               accept=".xls,.xlsx"
               style={{ display: 'none' }}
@@ -96,7 +96,7 @@ export default function Dashboard() {
             </label>
 
             {files.length > 0 && (
-              <Typography>
+              <Typography align="center">
                 Selected files: {files.map(f => f.name).join(', ')}
               </Typography>
             )}
@@ -127,17 +127,19 @@ export default function Dashboard() {
 
         {charts.length > 0 && (
           <Paper sx={{ p: 3, mt: 3 }}>
-            <Typography variant="h5" gutterBottom>
+            <Typography variant="h5" gutterBottom align="center">
               Generated Charts
             </Typography>
-            <Grid container spacing={2}>
+            <Grid container spacing={3}>
               {charts.map((chart, index) => (
                 <Grid item xs={12} md={6} key={index}>
-                  <img
-                    src={`http://localhost:5000/${chart}`}
-                    alt={`Chart ${index + 1}`}
-                    style={{ width: '100%', height: 'auto' }}
-                  />
+                  <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                    <img
+                      src={`http://localhost:5000/charts/${chart.split('/').pop()}`}
+                      alt={`Chart ${index + 1}`}
+                      style={{ maxWidth: '100%', height: 'auto' }}
+                    />
+                  </Box>
                 </Grid>
               ))}
             </Grid>

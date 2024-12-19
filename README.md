@@ -10,6 +10,8 @@ A secure, modular web application for processing Excel files and generating char
 - Secure file storage
 - Responsive UI using Material-UI
 - Protected routes and API endpoints
+- Centered layout with optimized chart display
+- Static file serving for generated charts
 
 ## Technology Stack
 
@@ -24,6 +26,7 @@ A secure, modular web application for processing Excel files and generating char
 ### Backend
 - Flask (Python)
 - Flask-CORS for cross-origin requests
+- Flask's send_from_directory for static file serving
 - Pandas for Excel processing
 - Openpyxl and xlrd for Excel file handling
 - Matplotlib for chart generation
@@ -170,6 +173,8 @@ superpro_webapp_v2/
 4. View generated charts:
    - Comparative charts for different cost categories
    - Stacked bar charts for unit production costs
+   - Charts are served directly from the backend
+   - Responsive layout with optimized display
 
 ## Excel File Support
 
@@ -186,6 +191,7 @@ The application uses a robust Excel file handling system:
 - Supabase Row Level Security (RLS) is implemented
 - Environment variables are used for sensitive data
 - CORS is configured for security
+- Static file serving is restricted to the charts directory
 
 ## Development
 

@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import os
 from dotenv import load_dotenv
@@ -17,6 +17,10 @@ UPLOAD_FOLDER = 'uploads'
 CHARTS_FOLDER = 'charts'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(CHARTS_FOLDER, exist_ok=True)
+
+@app.route('/charts/<path:filename>')
+def serve_chart(filename):
+    return send_from_directory(CHARTS_FOLDER, filename)
 
 @app.route('/api/health', methods=['GET'])
 def health_check():
@@ -94,11 +98,11 @@ def generate_charts():
                 f'Annual Cost ({processes[0].currency})',
                 filename
             )
-            chart_paths.append(os.path.join(CHARTS_FOLDER, filename))
+            chart_paths.append(filename)  # Only return the filename, not the full path
         
         # Generate stacked bar chart
         chart_gen.create_stacked_bar_chart(processes)
-        chart_paths.append(os.path.join(CHARTS_FOLDER, 'stacked_bar_chart.png'))
+        chart_paths.append('stacked_bar_chart.png')
         
         return jsonify({
             "message": "Charts generated successfully",

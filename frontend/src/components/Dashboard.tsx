@@ -8,8 +8,14 @@ import {
   Typography,
   CircularProgress,
   Grid,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemSecondaryAction,
+  IconButton,
+  Alert,
 } from '@mui/material';
-import { CloudUpload } from '@mui/icons-material';
+import { CloudUpload, Clear, Delete } from '@mui/icons-material';
 import axios from 'axios';
 
 export default function Dashboard() {
@@ -24,6 +30,17 @@ export default function Dashboard() {
     if (!selectedFiles) return;
 
     setFiles(Array.from(selectedFiles));
+  };
+
+  const handleClearFiles = () => {
+    setFiles([]);
+    setCharts([]);
+    setError('');
+  };
+
+  const handleRemoveFile = (index: number) => {
+    const newFiles = files.filter((_, i) => i !== index);
+    setFiles(newFiles);
   };
 
   const processFiles = async () => {
@@ -77,6 +94,10 @@ export default function Dashboard() {
               Excel File Processor
             </Typography>
 
+            <Alert severity="info" sx={{ width: '100%', mb: 2 }}>
+              Upload one or multiple Excel files to generate comparative charts. This feature allows you to visualize and compare multiple processes simultaneously.
+            </Alert>
+
             <input
               accept=".xls,.xlsx"
               style={{ display: 'none' }}
@@ -91,31 +112,55 @@ export default function Dashboard() {
                 component="span"
                 startIcon={<CloudUpload />}
               >
-                Select Excel Files
+                Select Excel File(s)
               </Button>
             </label>
 
             {files.length > 0 && (
-              <Typography align="center">
-                Selected files: {files.map(f => f.name).join(', ')}
-              </Typography>
+              <Box sx={{ width: '100%' }}>
+                <List>
+                  {files.map((file, index) => (
+                    <ListItem key={index}>
+                      <ListItemText 
+                        primary={file.name}
+                        secondary={`${(file.size / 1024).toFixed(1)} KB`}
+                      />
+                      <ListItemSecondaryAction>
+                        <IconButton edge="end" onClick={() => handleRemoveFile(index)}>
+                          <Delete />
+                        </IconButton>
+                      </ListItemSecondaryAction>
+                    </ListItem>
+                  ))}
+                </List>
+                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+                  <Button
+                    variant="outlined"
+                    color="secondary"
+                    onClick={handleClearFiles}
+                    startIcon={<Clear />}
+                    sx={{ mr: 2 }}
+                  >
+                    Clear All
+                  </Button>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={processFiles}
+                    disabled={uploading || !files.length}
+                  >
+                    {uploading ? (
+                      <>
+                        <CircularProgress size={24} sx={{ mr: 1 }} />
+                        Processing...
+                      </>
+                    ) : (
+                      'Process Files'
+                    )}
+                  </Button>
+                </Box>
+              </Box>
             )}
-
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={processFiles}
-              disabled={uploading || !files.length}
-            >
-              {uploading ? (
-                <>
-                  <CircularProgress size={24} sx={{ mr: 1 }} />
-                  Processing...
-                </>
-              ) : (
-                'Process Files'
-              )}
-            </Button>
 
             {error && (
               <Typography color="error" sx={{ mt: 2 }}>

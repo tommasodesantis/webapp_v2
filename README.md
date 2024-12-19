@@ -1,16 +1,23 @@
 # SuperPro WebApp
 
-A secure, modular web application for processing Excel files and generating charts using React, Flask, and Supabase.
+A secure, modular web application for processing Excel files and generating comparative charts using React, Flask, and Supabase.
 
 ## Features
 
 - User authentication using Supabase
 - Excel file upload and processing (supports both .xls and .xlsx formats)
-- Chart generation from Excel data
+- Multiple file upload support for process comparison
+- Interactive file management (remove individual files, clear all)
+- Comparative chart generation:
+  - Operating Costs comparison
+  - Material Costs comparison
+  - Consumable Costs comparison
+  - Utility Costs comparison
+  - Stacked bar charts for unit production costs
 - Secure file storage
 - Responsive UI using Material-UI
 - Protected routes and API endpoints
-- Centered layout with optimized chart display
+- Simple layout with chart display
 - Static file serving for generated charts
 
 ## Technology Stack
@@ -50,7 +57,7 @@ superpro_webapp_v2/
 ├── backend/               # Flask backend application
 │   ├── app.py            # Main Flask application
 │   ├── excel_reader_for_llm.py  # Excel file processor
-│   ├── test_excel.py     # Excel handling tests
+│   ├── chart_generation_multiple.py  # Chart generation for multiple files
 │   ├── .env              # Backend environment variables
 │   └── venv/             # Python virtual environment
 ├── shared/               # Shared configuration and types
@@ -168,13 +175,19 @@ superpro_webapp_v2/
 3. Upload Excel files for processing:
    - Supports both .xls and .xlsx formats
    - Uses openpyxl as primary engine with xlrd fallback for legacy .xls files
-   - Multiple files can be uploaded for comparison
+   - Upload multiple files simultaneously for comparison
+   - Manage uploaded files with individual removal or clear all option
+   - View file sizes and names in the interactive file list
 
 4. View generated charts:
-   - Comparative charts for different cost categories
+   - Comparative charts for different cost categories:
+     - Operating Costs comparison
+     - Material Costs comparison
+     - Consumable Costs comparison
+     - Utility Costs comparison
    - Stacked bar charts for unit production costs
    - Charts are served directly from the backend
-   - Responsive layout with optimized display
+   - Responsive layout with grid display
 
 ## Excel File Support
 

@@ -14,38 +14,24 @@ def read_excel_for_llm(file_path):
         if ext.lower() in ['.xlsx', '.xls']:
             sheets = {}
             
-            if ext.lower() == '.xls':
-                print("Detected .xls format, attempting to read with xlrd engine")
-                try:
-                    # For .xls files, try xlrd first
-                    sheets = pd.read_excel(file_path, sheet_name=None, engine='xlrd')
-                    print("Successfully read .xls file with xlrd engine")
-                except Exception as e:
-                    print(f"xlrd engine failed: {str(e)}")
+            # Try openpyxl first for all Excel files
+            print("Attempting to read with openpyxl engine")
+            try:
+                sheets = pd.read_excel(file_path, sheet_name=None, engine='openpyxl')
+                print("Successfully read file with openpyxl engine")
+            except Exception as e:
+                print(f"openpyxl engine failed: {str(e)}")
+                if ext.lower() == '.xls':
+                    # Fallback to xlrd only for .xls files
+                    print("Attempting fallback to xlrd engine for .xls file")
                     try:
-                        # Fallback to openpyxl
-                        print("Attempting fallback to openpyxl engine")
-                        sheets = pd.read_excel(file_path, sheet_name=None, engine='openpyxl')
-                        print("Successfully read file with openpyxl engine")
+                        sheets = pd.read_excel(file_path, sheet_name=None, engine='xlrd')
+                        print("Successfully read .xls file with xlrd engine")
                     except Exception as e2:
-                        print(f"openpyxl engine also failed: {str(e2)}")
-                        raise Exception(f"Failed to read .xls file with both engines. xlrd error: {str(e)}, openpyxl error: {str(e2)}")
-            else:  # .xlsx file
-                print("Detected .xlsx format, attempting to read with openpyxl engine")
-                try:
-                    # Use openpyxl for .xlsx files
-                    xlsx = load_workbook(filename=file_path, read_only=True, data_only=True)
-                    for sheet_name in xlsx.sheetnames:
-                        try:
-                            df = pd.read_excel(file_path, sheet_name=sheet_name, engine='openpyxl')
-                            sheets[sheet_name] = df
-                        except UnicodeDecodeError:
-                            df = pd.read_excel(file_path, sheet_name=sheet_name, engine='openpyxl', encoding='latin1')
-                            sheets[sheet_name] = df
-                    print("Successfully read .xlsx file")
-                except Exception as e:
-                    print(f"Failed to read .xlsx file: {str(e)}")
-                    raise
+                        print(f"xlrd engine also failed: {str(e2)}")
+                        raise Exception(f"Failed to read Excel file. openpyxl error: {str(e)}, xlrd error: {str(e2)}")
+                else:
+                    raise Exception(f"Failed to read Excel file: {str(e)}")
             
             print(f"Successfully read the Excel file: {file_path}")
             

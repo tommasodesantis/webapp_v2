@@ -14,7 +14,25 @@ A secure, modular web application for processing Excel files and generating comp
   - Consumable Costs comparison
   - Utility Costs comparison
   - Stacked bar charts for unit production costs
-- Secure file storage
+- Secure file storage using Supabase Storage
+- Public URLs for generated charts
+- Automatic JSON conversion and storage of Excel data
+# SuperPro WebApp
+
+A secure, modular web application for processing Excel files and generating comparative charts using React, Flask, and Supabase.
+
+## Features
+
+- User authentication using Supabase
+- Excel file upload and processing (supports both .xls and .xlsx formats)
+- Multiple file upload support for process comparison
+- Interactive file management (remove individual files, clear all)
+- Comparative chart generation:
+  - Operating Costs comparison
+  - Material Costs comparison
+  - Consumable Costs comparison
+  - Utility Costs comparison
+  - Stacked bar charts for unit production costs
 - Responsive UI using Material-UI
 - Protected routes and API endpoints
 - Simple layout with chart display
@@ -33,11 +51,11 @@ A secure, modular web application for processing Excel files and generating comp
 ### Backend
 - Flask (Python)
 - Flask-CORS for cross-origin requests
-- Flask's send_from_directory for static file serving
 - Pandas for Excel processing
 - Openpyxl and xlrd for Excel file handling
 - Matplotlib for chart generation
-- Supabase for authentication and storage
+- Supabase for authentication and file storage
+- BytesIO for in-memory file processing
 
 ### Shared
 - TypeScript configuration
@@ -55,11 +73,10 @@ superpro_webapp_v2/
 │   ├── .env               # Frontend environment variables
 │   └── package.json       # Frontend dependencies
 ├── backend/               # Flask backend application
-│   ├── app.py            # Main Flask application
+│   ├── app.py            # Main Flask application with Supabase integration
 │   ├── excel_reader_for_llm.py  # Excel file processor
 │   ├── chart_generation_multiple.py  # Chart generation for multiple files
-│   ├── .env              # Backend environment variables
-│   └── venv/             # Python virtual environment
+│   └── .env              # Backend environment variables
 ├── shared/               # Shared configuration and types
 │   ├── supabase.config.ts # Supabase configuration
 │   └── tsconfig.json     # TypeScript configuration
@@ -127,9 +144,7 @@ superpro_webapp_v2/
    FLASK_APP=app.py
    FLASK_ENV=development
    SUPABASE_URL=your_supabase_url
-   SUPABASE_KEY=your_supabase_service_role_key
-   UPLOAD_FOLDER=uploads
-   CHARTS_FOLDER=charts
+   SUPABASE_SERVICE_KEY=your_supabase_service_role_key
    ```
 
 5. Start the Flask server:
@@ -162,9 +177,14 @@ superpro_webapp_v2/
 
 3. Create the necessary tables using the SQL in `shared/supabase.config.ts`
 
-4. Set up storage buckets for:
-   - Excel file uploads
-   - Generated charts
+4. Set up storage buckets:
+   - Create 'excel-uploads' bucket for Excel files and JSON data
+   - Create 'charts' bucket for generated chart images
+   - Configure public access for the buckets to serve files via URLs
+
+5. Configure storage policies:
+   - Enable public read access for generated charts
+   - Secure write access to authenticated users only
 
 ## Usage
 
@@ -176,6 +196,8 @@ superpro_webapp_v2/
    - Supports both .xls and .xlsx formats
    - Uses openpyxl as primary engine with xlrd fallback for legacy .xls files
    - Upload multiple files simultaneously for comparison
+   - Files are securely stored in Supabase Storage
+   - Automatic JSON conversion and storage of Excel data
    - Manage uploaded files with individual removal or clear all option
    - View file sizes and names in the interactive file list
 
@@ -186,7 +208,8 @@ superpro_webapp_v2/
      - Consumable Costs comparison
      - Utility Costs comparison
    - Stacked bar charts for unit production costs
-   - Charts are served directly from the backend
+   - Charts are stored and served via Supabase Storage
+   - Access charts through public URLs
    - Responsive layout with grid display
 
 ## Excel File Support
@@ -204,7 +227,8 @@ The application uses a robust Excel file handling system:
 - Supabase Row Level Security (RLS) is implemented
 - Environment variables are used for sensitive data
 - CORS is configured for security
-- Static file serving is restricted to the charts directory
+- Supabase Storage policies control file access
+- Secure file handling with in-memory processing
 
 ## Development
 

@@ -1,4 +1,5 @@
 import json
+from io import BytesIO
 import matplotlib.pyplot as plt
 import numpy as np
 import os
@@ -43,24 +44,29 @@ class ProcessDataExtractor:
         """Rename items according to standardized naming"""
         return self.name_mapping.get(name, name)
     
-    def __init__(self, file_path: str, scenario_name: Optional[str] = None):
-        self.data = self._load_json_data(file_path)
+    def __init__(self, json_url: str, scenario_name: Optional[str] = None):
+        self.data = self._load_json_data(json_url)
         self.currency = self._detect_currency()
         self.year = self._detect_year()
-        self.file_path = file_path
+        self.json_url = json_url
         self.scenario_name = scenario_name
         
     @staticmethod
-    def _load_json_data(file_path: str) -> Dict:
-        """Load and validate JSON data"""
+    def _load_json_data(json_url: str) -> Dict:
+        """Load and validate JSON data from URL or file path"""
         try:
-            with open(file_path, 'r', encoding='utf-8') as file:
-                data = json.load(file)
+            if json_url.startswith('http'):
+                import requests
+                response = requests.get(json_url)
+                data = response.json()
+            else:
+                with open(json_url, 'r', encoding='utf-8') as file:
+                    data = json.load(file)
             if 'Table p. 1' not in data:
                 raise ValueError("Invalid SuperPro Designer output format")
             return data
         except Exception as e:
-            raise Exception(f"Error loading {file_path}: {str(e)}")
+            raise Exception(f"Error loading {json_url}: {str(e)}")
 
     def _detect_currency(self) -> str:
         """Detect currency symbol from the data"""
@@ -152,14 +158,14 @@ class ProcessDataExtractor:
         )
 
     def _extract_process_name(self) -> str:
-        """Extract process name from scenario name or filename"""
+        """Extract process name from scenario name or URL"""
         if self.scenario_name:
             return self.scenario_name
-        # Fallback to filename without timestamp prefix if no scenario name provided
-        filename = os.path.splitext(os.path.basename(self.file_path))[0]
-        # Remove timestamp prefix if present (e.g., "1729777526733-")
-        if '-' in filename:
-            filename = filename.split('-', 1)[1]
+        # Fallback to filename from URL without timestamp prefix
+        filename = os.path.splitext(os.path.basename(self.json_url))[0]
+        # Remove UUID prefix if present
+        if '_' in filename:
+            filename = filename.split('_', 1)[1]
         return filename
 
     def _extract_operating_costs(self) -> Dict[str, float]:
@@ -192,16 +198,15 @@ class ProcessDataExtractor:
 class ChartGenerator:
     """Class to handle chart generation for multiple processes"""
     
-    def __init__(self, output_dir: str):
-        self.output_dir = output_dir
-        os.makedirs(output_dir, exist_ok=True)
+    def __init__(self):
         plt.rcParams['font.family'] = 'DejaVu Sans'  # Use a font that supports the euro symbol
         
     def create_comparative_chart(self, 
                                data: Dict[str, Dict[str, float]], 
                                title: str, 
                                ylabel: str,
-                               filename: str):
+                               output: BytesIO,
+                               format: str = 'png'):
         """Create comparative bar chart"""
         if not data:
             return
@@ -230,10 +235,10 @@ class ChartGenerator:
         ax.legend(fontsize=10)
 
         plt.tight_layout()
-        plt.savefig(os.path.join(self.output_dir, filename))
+        plt.savefig(output, format=format)
         plt.close()
 
-    def create_stacked_bar_chart(self, processes: List[ProcessData]):
+    def create_stacked_bar_chart(self, processes: List[ProcessData], output: BytesIO, format: str = 'png'):
         """Create stacked bar chart for unit production costs"""
         
         categories = [
@@ -290,8 +295,7 @@ class ChartGenerator:
         plt.tight_layout()
         
         # Save chart
-        plt.savefig(os.path.join(self.output_dir, 'stacked_bar_chart.png'), 
-                    bbox_inches='tight')
+        plt.savefig(output, format=format, bbox_inches='tight')
         plt.close()
 
 def main(json_files: List[str], scenario_names: List[str], output_dir: str):
@@ -314,7 +318,7 @@ def main(json_files: List[str], scenario_names: List[str], output_dir: str):
         return
 
     # Generate charts
-    chart_gen = ChartGenerator(output_dir)
+    chart_gen = ChartGenerator()
     
     # Create comparative charts for each cost category
     categories = {
@@ -327,15 +331,26 @@ def main(json_files: List[str], scenario_names: List[str], output_dir: str):
     # Generate individual comparative charts
     for title, (getter, filename) in categories.items():
         data = {p.name: getter(p) for p in processes}
+        output = BytesIO()
         chart_gen.create_comparative_chart(
             data,
             f'Comparative {title}',
             f'Annual Cost ({processes[0].currency})',
-            filename
+            output,
+            format='png'
         )
+        output.seek(0)
+        # Save to file
+        with open(os.path.join(output_dir, filename), 'wb') as f:
+            f.write(output.getvalue())
     
     # Generate stacked bar chart
-    chart_gen.create_stacked_bar_chart(processes)
+    output = BytesIO()
+    chart_gen.create_stacked_bar_chart(processes, output, format='png')
+    output.seek(0)
+    # Save to file
+    with open(os.path.join(output_dir, 'stacked_bar_chart.png'), 'wb') as f:
+        f.write(output.getvalue())
 
 if __name__ == "__main__":
     import sys

@@ -22,7 +22,7 @@ export default function Dashboard() {
   const { user } = useAuth();
   const [files, setFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
-  const [charts, setCharts] = useState<string[]>([]);
+  const [chartUrls, setChartUrls] = useState<string[]>([]);
   const [error, setError] = useState('');
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -34,7 +34,7 @@ export default function Dashboard() {
 
   const handleClearFiles = () => {
     setFiles([]);
-    setCharts([]);
+    setChartUrls([]);
     setError('');
   };
 
@@ -69,7 +69,7 @@ export default function Dashboard() {
         scenarios: files.map(f => f.name.replace(/\.[^/.]+$/, ''))
       });
 
-      setCharts(chartResponse.data.chart_paths);
+      setChartUrls(chartResponse.data.chart_urls);
     } catch (err) {
       console.error(err);
       setError('Error processing files');
@@ -170,19 +170,24 @@ export default function Dashboard() {
           </Box>
         </Paper>
 
-        {charts.length > 0 && (
+        {chartUrls.length > 0 && (
           <Paper sx={{ p: 3, mt: 3 }}>
             <Typography variant="h5" gutterBottom align="center">
               Generated Charts
             </Typography>
             <Grid container spacing={3}>
-              {charts.map((chart, index) => (
+              {chartUrls.map((url, index) => (
                 <Grid item xs={12} md={6} key={index}>
                   <Box sx={{ display: 'flex', justifyContent: 'center' }}>
                     <img
-                      src={`http://localhost:5000/charts/${chart.split('/').pop()}`}
+                      src={url}
                       alt={`Chart ${index + 1}`}
                       style={{ maxWidth: '100%', height: 'auto' }}
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.onerror = null;
+                        target.src = '/error-image-placeholder.svg';
+                      }}
                     />
                   </Box>
                 </Grid>

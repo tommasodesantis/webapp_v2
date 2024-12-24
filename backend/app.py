@@ -1,26 +1,24 @@
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify
 from flask_cors import CORS
 import os
 from dotenv import load_dotenv
 import pandas as pd
 import json
+import uuid
+from io import BytesIO
 from excel_reader_for_llm import read_excel_for_llm, excel_to_json
 from chart_generation_multiple import ProcessDataExtractor, ChartGenerator
+from supabase import create_client, Client
 
 load_dotenv()
 
+# Initialize Supabase client
+SUPABASE_URL = os.getenv('SUPABASE_URL')
+SUPABASE_SERVICE_KEY = os.getenv('SUPABASE_SERVICE_KEY')
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+
 app = Flask(__name__)
 CORS(app)
-
-# Configure upload folder
-UPLOAD_FOLDER = 'uploads'
-CHARTS_FOLDER = 'charts'
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-os.makedirs(CHARTS_FOLDER, exist_ok=True)
-
-@app.route('/charts/<path:filename>')
-def serve_chart(filename):
-    return send_from_directory(CHARTS_FOLDER, filename)
 
 @app.route('/api/health', methods=['GET'])
 def health_check():
@@ -39,21 +37,44 @@ def upload_file():
         return jsonify({"error": "Invalid file format"}), 400
     
     try:
-        # Save the uploaded file
-        file_path = os.path.join(UPLOAD_FOLDER, file.filename)
-        file.save(file_path)
+        # Read file into memory
+        file_bytes = file.read()
+        unique_filename = f"{str(uuid.uuid4())}_{file.filename}"
+        
+        # Upload Excel file to Supabase
+        excel_response = supabase.storage \
+            .from_('excel-uploads') \
+            .upload(unique_filename, file_bytes)
+            
+        if excel_response.get('error'):
+            return jsonify({'error': excel_response['error']['message']}), 500
+            
+        # Create a temporary file for processing
+        temp_file = BytesIO(file_bytes)
         
         # Process the Excel file
-        json_data = read_excel_for_llm(file_path)
+        json_data = read_excel_for_llm(temp_file)
         
-        # Save JSON output
-        json_output_path = os.path.join(UPLOAD_FOLDER, f"{os.path.splitext(file.filename)[0]}_output.json")
-        with open(json_output_path, 'w', encoding='utf-8') as f:
-            json.dump(json_data, f, indent=2, ensure_ascii=False)
+        # Convert JSON to bytes
+        json_bytes = json.dumps(json_data, indent=2, ensure_ascii=False).encode('utf-8')
+        json_filename = f"{os.path.splitext(unique_filename)[0]}_output.json"
+        
+        # Upload JSON to Supabase
+        json_response = supabase.storage \
+            .from_('excel-uploads') \
+            .upload(json_filename, json_bytes)
+            
+        if json_response.get('error'):
+            return jsonify({'error': json_response['error']['message']}), 500
+        
+        # Get the public URL for the JSON file
+        json_url = supabase.storage \
+            .from_('excel-uploads') \
+            .get_public_url(json_filename)
         
         return jsonify({
             "message": "File processed successfully",
-            "json_path": json_output_path
+            "json_path": json_url
         }), 200
         
     except Exception as e:
@@ -70,17 +91,17 @@ def generate_charts():
         scenario_names = data.get('scenarios', [f"Scenario {i+1}" for i in range(len(json_files))])
         
         # Create chart generator
-        chart_gen = ChartGenerator(CHARTS_FOLDER)
+        chart_gen = ChartGenerator()
         
         # Process each file
         processes = []
-        for file_path, scenario_name in zip(json_files, scenario_names):
-            extractor = ProcessDataExtractor(file_path, scenario_name)
+        for json_url, scenario_name in zip(json_files, scenario_names):
+            extractor = ProcessDataExtractor(json_url, scenario_name)
             process_data = extractor.extract_process_data()
             processes.append(process_data)
         
         # Generate charts
-        chart_paths = []
+        chart_urls = []
         
         # Generate comparative charts
         categories = {
@@ -92,21 +113,56 @@ def generate_charts():
         
         for title, (getter, filename) in categories.items():
             data = {p.name: getter(p) for p in processes}
+            chart_bytes = BytesIO()
             chart_gen.create_comparative_chart(
                 data,
                 f'Comparative {title}',
                 f'Annual Cost ({processes[0].currency})',
-                filename
+                chart_bytes,
+                format='png'
             )
-            chart_paths.append(filename)  # Only return the filename, not the full path
+            chart_bytes.seek(0)
+            
+            # Generate unique filename
+            unique_filename = f"chart_{str(uuid.uuid4())}_{filename}"
+            
+            # Upload chart to Supabase
+            response = supabase.storage \
+                .from_('charts') \
+                .upload(unique_filename, chart_bytes.read())
+                
+            if response.get('error'):
+                return jsonify({'error': response['error']['message']}), 500
+                
+            # Get public URL
+            chart_url = supabase.storage \
+                .from_('charts') \
+                .get_public_url(unique_filename)
+            chart_urls.append(chart_url)
         
         # Generate stacked bar chart
-        chart_gen.create_stacked_bar_chart(processes)
-        chart_paths.append('stacked_bar_chart.png')
+        stacked_chart_bytes = BytesIO()
+        chart_gen.create_stacked_bar_chart(processes, stacked_chart_bytes, format='png')
+        stacked_chart_bytes.seek(0)
+        
+        # Upload stacked bar chart
+        stacked_filename = f"chart_{str(uuid.uuid4())}_stacked_bar_chart.png"
+        response = supabase.storage \
+            .from_('charts') \
+            .upload(stacked_filename, stacked_chart_bytes.read())
+            
+        if response.get('error'):
+            return jsonify({'error': response['error']['message']}), 500
+            
+        # Get public URL for stacked chart
+        stacked_url = supabase.storage \
+            .from_('charts') \
+            .get_public_url(stacked_filename)
+        chart_urls.append(stacked_url)
         
         return jsonify({
             "message": "Charts generated successfully",
-            "chart_paths": chart_paths
+            "chart_paths": chart_urls
         }), 200
         
     except Exception as e:

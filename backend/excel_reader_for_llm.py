@@ -4,12 +4,26 @@ import sys
 import os
 from openpyxl import load_workbook
 
-def read_excel_for_llm(file_path):
-    print(f"Attempting to read file: {file_path}")
+def read_excel_for_llm(file_input):
+    """
+    Read Excel file from either a file path or BytesIO object
+    
+    Args:
+        file_input: Either a string file path or BytesIO object containing Excel data
+    """
+    print(f"Attempting to read Excel data")
     
     try:
-        # Determine file extension
-        _, ext = os.path.splitext(file_path)
+        # Determine if input is file path or BytesIO
+        if isinstance(file_input, str):
+            file_path = file_input
+            _, ext = os.path.splitext(file_path)
+            print(f"Reading from file path: {file_path}")
+        else:
+            # For BytesIO, we assume it's an xlsx file since that's what we handle in the upload route
+            ext = '.xlsx'
+            file_path = file_input
+            print("Reading from BytesIO object")
         
         if ext.lower() in ['.xlsx', '.xls']:
             sheets = {}
@@ -18,11 +32,11 @@ def read_excel_for_llm(file_path):
             print("Attempting to read with openpyxl engine")
             try:
                 sheets = pd.read_excel(file_path, sheet_name=None, engine='openpyxl')
-                print("Successfully read file with openpyxl engine")
+                print("Successfully read with openpyxl engine")
             except Exception as e:
                 print(f"openpyxl engine failed: {str(e)}")
-                if ext.lower() == '.xls':
-                    # Fallback to xlrd only for .xls files
+                if isinstance(file_input, str) and ext.lower() == '.xls':
+                    # Fallback to xlrd only for .xls files from file path
                     print("Attempting fallback to xlrd engine for .xls file")
                     try:
                         sheets = pd.read_excel(file_path, sheet_name=None, engine='xlrd')

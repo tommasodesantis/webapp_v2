@@ -82,9 +82,10 @@ export default function Dashboard() {
   };
 
   return (
-    <Container maxWidth="lg" sx={{ display: 'flex', justifyContent: 'center', minHeight: '100vh', py: 4 }}>
-      <Box sx={{ width: '100%', maxWidth: 800 }}>
-        <Paper sx={{ p: 3 }}>
+    <Container maxWidth={false}>
+      <Grid container justifyContent="center" sx={{ py: 4 }}>
+        <Grid item xs={12} md={8}>
+        <Paper sx={{ p: 3, width: '100%' }}>
           <Box
             sx={{
               display: 'flex',
@@ -174,11 +175,11 @@ export default function Dashboard() {
         </Paper>
 
         {chartUrls.length > 0 && (
-          <Paper sx={{ p: 3, mt: 3 }}>
+          <Paper sx={{ p: 3, mt: 3, width: '100%' }}>
             <Typography variant="h5" gutterBottom align="center">
               Generated Charts
             </Typography>
-            <Grid container spacing={3}>
+            <Grid container spacing={3} justifyContent="center">
               {chartUrls.map((url, index) => (
                 <Grid item xs={12} md={6} key={index}>
                   <Box sx={{ display: 'flex', justifyContent: 'center' }}>
@@ -198,7 +199,8 @@ export default function Dashboard() {
             </Grid>
           </Paper>
         )}
-      </Box>
+        </Grid>
+      </Grid>
     </Container>
   );
 }

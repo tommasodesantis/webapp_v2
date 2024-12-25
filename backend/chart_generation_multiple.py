@@ -1,5 +1,7 @@
 import json
 from io import BytesIO
+import matplotlib
+matplotlib.use('Agg')  # Force non-interactive backend
 import matplotlib.pyplot as plt
 import numpy as np
 import os
@@ -300,15 +302,18 @@ class ChartGenerator:
 
 def main(json_files: List[str], scenario_names: List[str], output_dir: str):
     """Main function to process multiple JSON files and generate charts"""
+    print("Starting chart generation process...")
     
     processes = []
     
     # Extract data from all process files
     for file_path, scenario_name in zip(json_files, scenario_names):
         try:
+            print(f"Processing file: {file_path} with scenario: {scenario_name}")
             extractor = ProcessDataExtractor(file_path, scenario_name)
             process_data = extractor.extract_process_data()
             processes.append(process_data)
+            print(f"Successfully extracted data from {file_path}")
         except Exception as e:
             print(f"Error processing {file_path}: {str(e)}")
             continue
@@ -317,40 +322,61 @@ def main(json_files: List[str], scenario_names: List[str], output_dir: str):
         print("No valid process data found")
         return
 
-    # Generate charts
-    chart_gen = ChartGenerator()
+    print(f"Successfully processed {len(processes)} files. Starting chart generation...")
     
-    # Create comparative charts for each cost category
-    categories = {
+    try:
+        # Generate charts
+        chart_gen = ChartGenerator()
+        print("Chart generator initialized with non-interactive backend")
+        
+        # Create comparative charts for each cost category
+        categories = {
         'Operating Costs': (lambda p: p.operating_costs, 'AOC.png'),
         'Material Costs': (lambda p: p.material_costs, 'Materials.png'),
         'Consumable Costs': (lambda p: p.consumable_costs, 'Consumables.png'),
         'Utility Costs': (lambda p: p.utility_costs, 'Utilities.png')
     }
     
-    # Generate individual comparative charts
-    for title, (getter, filename) in categories.items():
-        data = {p.name: getter(p) for p in processes}
-        output = BytesIO()
-        chart_gen.create_comparative_chart(
-            data,
-            f'Comparative {title}',
-            f'Annual Cost ({processes[0].currency})',
-            output,
-            format='png'
-        )
-        output.seek(0)
-        # Save to file
-        with open(os.path.join(output_dir, filename), 'wb') as f:
-            f.write(output.getvalue())
-    
-    # Generate stacked bar chart
-    output = BytesIO()
-    chart_gen.create_stacked_bar_chart(processes, output, format='png')
-    output.seek(0)
-    # Save to file
-    with open(os.path.join(output_dir, 'stacked_bar_chart.png'), 'wb') as f:
-        f.write(output.getvalue())
+        # Generate individual comparative charts
+        for title, (getter, filename) in categories.items():
+            try:
+                print(f"Generating {title} chart...")
+                data = {p.name: getter(p) for p in processes}
+                output = BytesIO()
+                chart_gen.create_comparative_chart(
+                    data,
+                    f'Comparative {title}',
+                    f'Annual Cost ({processes[0].currency})',
+                    output,
+                    format='png'
+                )
+                output.seek(0)
+                # Save to file
+                output_path = os.path.join(output_dir, filename)
+                with open(output_path, 'wb') as f:
+                    f.write(output.getvalue())
+                print(f"Successfully saved {title} chart to {output_path}")
+            except Exception as e:
+                print(f"Error generating {title} chart: {str(e)}")
+                continue
+        
+        # Generate stacked bar chart
+        try:
+            print("Generating stacked bar chart...")
+            output = BytesIO()
+            chart_gen.create_stacked_bar_chart(processes, output, format='png')
+            output.seek(0)
+            # Save to file
+            output_path = os.path.join(output_dir, 'stacked_bar_chart.png')
+            with open(output_path, 'wb') as f:
+                f.write(output.getvalue())
+            print("Successfully saved stacked bar chart")
+        except Exception as e:
+            print(f"Error generating stacked bar chart: {str(e)}")
+        
+        print("Chart generation process completed successfully")
+    except Exception as e:
+        print(f"Unexpected error during chart generation: {str(e)}")
 
 if __name__ == "__main__":
     import sys

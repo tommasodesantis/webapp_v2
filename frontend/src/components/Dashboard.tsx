@@ -30,6 +30,9 @@ export default function Dashboard() {
     if (!selectedFiles) return;
 
     setFiles(Array.from(selectedFiles));
+    
+    // Reset the input value to ensure onChange fires even if same file is selected again
+    event.target.value = '';
   };
 
   const handleClearFiles = () => {

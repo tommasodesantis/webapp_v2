@@ -211,6 +211,9 @@ The application uses a robust Excel file handling system with temporary file pro
 - Detailed error messages returned to frontend
 - Supabase response error handling with proper status codes
 - BytesIO stream position management for reliable file processing
+- Non-interactive Matplotlib backend (Agg) to prevent threading issues
+- Enhanced chart generation logging for better error tracking
+- Thread-safe chart generation without GUI dependencies
 
 ## Security Considerations
 

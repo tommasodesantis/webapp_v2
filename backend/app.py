@@ -46,14 +46,25 @@ def upload_file():
             .from_('excel-uploads') \
             .upload(unique_filename, file_bytes)
             
-        if excel_response.get('error'):
-            return jsonify({'error': excel_response['error']['message']}), 500
+        if hasattr(excel_response, 'error'):
+            return jsonify({'error': str(excel_response.error)}), 500
             
-        # Create a temporary file for processing
-        temp_file = BytesIO(file_bytes)
+        # Create temp directories if they don't exist
+        temp_dir = os.path.join(os.getcwd(), 'backend', 'temp')
+        os.makedirs(temp_dir, exist_ok=True)
         
-        # Process the Excel file
-        json_data = read_excel_for_llm(temp_file)
+        # Save to temporary file
+        temp_filepath = os.path.join(temp_dir, f"temp_{unique_filename}")
+        with open(temp_filepath, 'wb') as f:
+            f.write(file_bytes)
+        
+        try:
+            # Process the Excel file
+            json_data = read_excel_for_llm(temp_filepath)
+        finally:
+            # Clean up temp file
+            if os.path.exists(temp_filepath):
+                os.remove(temp_filepath)
         
         # Convert JSON to bytes
         json_bytes = json.dumps(json_data, indent=2, ensure_ascii=False).encode('utf-8')
@@ -64,8 +75,8 @@ def upload_file():
             .from_('excel-uploads') \
             .upload(json_filename, json_bytes)
             
-        if json_response.get('error'):
-            return jsonify({'error': json_response['error']['message']}), 500
+        if hasattr(json_response, 'error'):
+            return jsonify({'error': str(json_response.error)}), 500
         
         # Get the public URL for the JSON file
         json_url = supabase.storage \
@@ -78,7 +89,10 @@ def upload_file():
         }), 200
         
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        import traceback
+        print("Error in generate_charts:")
+        print(traceback.format_exc())
+        return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
 
 @app.route('/api/generate-charts', methods=['POST'])
 def generate_charts():
@@ -128,15 +142,15 @@ def generate_charts():
             
             # Upload chart to Supabase
             response = supabase.storage \
-                .from_('charts') \
+            .from_('charts-output') \
                 .upload(unique_filename, chart_bytes.read())
                 
-            if response.get('error'):
-                return jsonify({'error': response['error']['message']}), 500
+            if hasattr(response, 'error'):
+                return jsonify({'error': str(response.error)}), 500
                 
             # Get public URL
             chart_url = supabase.storage \
-                .from_('charts') \
+            .from_('charts-output') \
                 .get_public_url(unique_filename)
             chart_urls.append(chart_url)
         
@@ -148,25 +162,28 @@ def generate_charts():
         # Upload stacked bar chart
         stacked_filename = f"chart_{str(uuid.uuid4())}_stacked_bar_chart.png"
         response = supabase.storage \
-            .from_('charts') \
+            .from_('charts-output') \
             .upload(stacked_filename, stacked_chart_bytes.read())
             
-        if response.get('error'):
-            return jsonify({'error': response['error']['message']}), 500
+        if hasattr(response, 'error'):
+            return jsonify({'error': str(response.error)}), 500
             
         # Get public URL for stacked chart
         stacked_url = supabase.storage \
-            .from_('charts') \
+            .from_('charts-output') \
             .get_public_url(stacked_filename)
         chart_urls.append(stacked_url)
         
         return jsonify({
             "message": "Charts generated successfully",
-            "chart_paths": chart_urls
+            "chart_urls": chart_urls
         }), 200
         
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        import traceback
+        print("Error in generate_charts:")
+        print(traceback.format_exc())
+        return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)

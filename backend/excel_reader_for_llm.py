@@ -20,10 +20,20 @@ def read_excel_for_llm(file_input):
             _, ext = os.path.splitext(file_path)
             print(f"Reading from file path: {file_path}")
         else:
-            # For BytesIO, we assume it's an xlsx file since that's what we handle in the upload route
-            ext = '.xlsx'
+            # For BytesIO, we need to handle it differently since it's a stream
             file_path = file_input
             print("Reading from BytesIO object")
+            # Try to read the first few bytes to check if it's an Excel file
+            magic_bytes = file_path.read(8)
+            file_path.seek(0)  # Reset position after reading magic bytes
+            
+            # Check magic bytes for Excel file types
+            if magic_bytes.startswith(b'PK\x03\x04'):  # XLSX file
+                ext = '.xlsx'
+            elif magic_bytes.startswith(b'\xD0\xCF\x11\xE0'):  # XLS file
+                ext = '.xls'
+            else:
+                raise Exception("Invalid Excel file format")
         
         if ext.lower() in ['.xlsx', '.xls']:
             sheets = {}

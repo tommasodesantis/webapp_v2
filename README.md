@@ -14,25 +14,6 @@ A secure, modular web application for processing Excel files and generating comp
   - Consumable Costs comparison
   - Utility Costs comparison
   - Stacked bar charts for unit production costs
-- Secure file storage using Supabase Storage
-- Public URLs for generated charts
-- Automatic JSON conversion and storage of Excel data
-# SuperPro WebApp
-
-A secure, modular web application for processing Excel files and generating comparative charts using React, Flask, and Supabase.
-
-## Features
-
-- User authentication using Supabase
-- Excel file upload and processing (supports both .xls and .xlsx formats)
-- Multiple file upload support for process comparison
-- Interactive file management (remove individual files, clear all)
-- Comparative chart generation:
-  - Operating Costs comparison
-  - Material Costs comparison
-  - Consumable Costs comparison
-  - Utility Costs comparison
-  - Stacked bar charts for unit production costs
 - Responsive UI using Material-UI
 - Protected routes and API endpoints
 - Simple layout with chart display
@@ -143,6 +124,7 @@ superpro_webapp_v2/
    ```
    FLASK_APP=app.py
    FLASK_ENV=development
+   FLASK_DEBUG=1
    SUPABASE_URL=your_supabase_url
    SUPABASE_SERVICE_KEY=your_supabase_service_role_key
    ```
@@ -179,7 +161,7 @@ superpro_webapp_v2/
 
 4. Set up storage buckets:
    - Create 'excel-uploads' bucket for Excel files and JSON data
-   - Create 'charts' bucket for generated chart images
+   - Create 'charts-output' bucket for generated chart images
    - Configure public access for the buckets to serve files via URLs
 
 5. Configure storage policies:
@@ -214,11 +196,21 @@ superpro_webapp_v2/
 
 ## Excel File Support
 
-The application uses a robust Excel file handling system:
+The application uses a robust Excel file handling system with temporary file processing:
 - Primary support for .xlsx files using openpyxl
 - Legacy support for .xls files using both openpyxl and xlrd
 - Automatic format detection and appropriate engine selection
-- Error handling with detailed logging for troubleshooting
+- Error handling with detailed logging and tracebacks for troubleshooting
+- Temporary file handling for reliable Excel processing
+
+## Debugging and Error Handling
+
+- Flask debug mode enabled for detailed error tracebacks
+- Comprehensive error logging in both upload and chart generation routes
+- Temporary file handling with proper cleanup
+- Detailed error messages returned to frontend
+- Supabase response error handling with proper status codes
+- BytesIO stream position management for reliable file processing
 
 ## Security Considerations
 
